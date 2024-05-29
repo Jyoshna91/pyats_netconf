@@ -1,0 +1,87 @@
+from genie.testbed import load
+from pyats.topology import loader
+from pyats import aetest
+import re, logging
+import pdb
+from acl_lib import NetconfCommonFunctions
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+class CommonSetup(aetest.CommonSetup):
+    @aetest.subsection
+    def connect_to_devices(self, testbed):
+        global device
+        device = testbed.devices['n9k1']
+        device.connect(alias='nc', via='netconf')
+        assert device.nc.connected, "Device connection failed"
+
+class Testcase(aetest.Testcase):
+    acl_name = 'aclnqt'
+
+    @aetest.test
+    def configure_acl(self):
+        try:
+            reply_command = NetconfCommonFunctions.configure_acl(device)
+            logging.info("Configuration Reply: %s", reply_command)
+        except Exception as e:
+            self.failed(f"Failed to send configuration command: {e}")
+
+    @aetest.test
+    def verify_acl(self):
+        verification_request = f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="108" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show ip access-lists {self.acl_name}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+        try:
+            verification_reply = device.nc.request(verification_request)
+            #logging.info("Verification Reply: %s", verification_reply)
+
+            # Use a detailed regular expression to verify one ACL rule
+            #acl_output = str(verification_reply)
+            #logging.info(acl_output)
+
+            rule = r"<mod:seqno>10</mod:seqno>\s*<mod:permitdeny>[a-z]{6}</mod:permitdeny>\s*<mod:ip>[a-z]{2}</mod:ip>\s*<mod:src_ip_prefix>10\.10\.10\.1/24</mod:src_ip_prefix>\s*<mod:dest_any>[a-z]{3}</mod:dest_any>"
+
+            match = re.search(rule, verification_reply)
+            if match:
+                logging.info("The Acl rule is verified successfully.")
+                logging.info("matched Line: %s", match.group(0))
+            else:
+                self.failed(f"Acl rule matching '{rule}' not found in the device configuration")
+        except Exception as e:
+            self.failed(f"Failed to send verification command: {e}")
+
+    @aetest.test
+    def unconfigure_acl(self):
+        try:
+            reply_command = NetconfCommonFunctions.unconfigure_acl(device)
+            logging.info("Configuration Reply: %s", reply_command)
+        except Exception as e:
+            self.failed(f"Failed to send configuration command: {e}")
+
+    @aetest.cleanup
+    def disconnect(self):
+        device.nc.disconnect()
+        assert not device.nc.connected, "Device disconnection failed"
+
+class CommonCleanup(aetest.CommonCleanup):
+    @aetest.subsection
+    def disconnect(self):
+        device.nc.disconnect()
+        assert not device.nc.connected, "Device disconnection failed"
+
+if __name__ == '__main__':
+    import argparse
+    from pyats import aetest
+    from genie.testbed import load
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--testbed', dest='testbed', type=loader.load)
+    args, unknown = parser.parse_known_args()
+
+    aetest.main(**vars(args))
