@@ -9,37 +9,40 @@ logger.setLevel(logging.INFO)
 
 class CommonSetup(aetest.CommonSetup):
     @aetest.subsection
-    def connect_to_devices(self, testbed):
+    def connect_to_devices(self, testbed, parameters):
         global device
         device = testbed.devices['n9k1']
         device.connect(alias='nc', via='netconf')
         assert device.nc.connected, "Device connection failed"
+        self.parent.parameters.update(parameters)
 
 class ConfigureACLOnDevice(aetest.Testcase):
-    acl_name = 'aclnqt'
-
     @aetest.test
-    def configure_acl(self):
+    def configure_acl(self, parameters):
+        acl_name = parameters['acl_name']
+        rule1 = parameters['rule1']
+        rule2 = parameters['rule2']
         try:
-            reply_command = NetconfCommonFunctions.configure_acl_on_device(device)
+            reply_command = NetconfCommonFunctions.configure_acl_on_device(device, acl_name, rule1, rule2)
             logging.info("Configuration Reply: %s", reply_command)
         except Exception as e:
             self.failed(f"Failed to send configuration command: {e}")
 
     @aetest.test
-    def verify_acl(self):
+    def verify_acl(self, parameters):
+        acl_name = parameters['acl_name']
         verification_request = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <nf:rpc message-id="111" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
             <nxos:exec-command>
-                <nxos:cmd>show ip access-lists {self.acl_name}</nxos:cmd>
+                <nxos:cmd>show ip access-lists {acl_name}</nxos:cmd>
             </nxos:exec-command>
         </nf:rpc>
         """
         try:
             verification_reply = device.nc.request(verification_request)
             acl_output = str(verification_reply)
-            rule = r"<mod:seqno>10</mod:seqno>\s*<mod:permitdeny>[a-z]{6}</mod:permitdeny>\s*<mod:ip>[a-z]{2}</mod:ip>\s*<mod:src_ip_prefix>10\.10\.10\.1/24</mod:src_ip_prefix>\s*<mod:dest_any>[a-z]{3}</mod:dest_any>"
+            rule = r"<mod:seqno>10</mod:seqno>\s*<mod:permitdeny>[a-z]{6}</mod:permitdeny>\s*<mod:ip>[a-z]{2}</mod:ip>\s*<mod:src_ip_prefix>192\.168\.11\.1/24</mod:src_ip_prefix>\s*<mod:dest_any>[a-z]{3}"
 
             match = re.search(rule, acl_output)
             if match:
@@ -51,52 +54,32 @@ class ConfigureACLOnDevice(aetest.Testcase):
             self.failed(f"Failed to send verification command: {e}")
 
     @aetest.test
-    def unconfigure_acl(self):
+    def unconfigure_acl(self, parameters):
+        acl_name = parameters['acl_name']
         try:
-            reply_command = NetconfCommonFunctions.unconfigure_acl_on_device(device)
+            reply_command = NetconfCommonFunctions.unconfigure_acl_on_device(device, acl_name)
             logging.info("Unconfiguration Reply: %s", reply_command)
         except Exception as e:
             self.failed(f"Failed to send unconfiguration command: {e}")
 
 class ConfigureACLOnInterface(aetest.Testcase):
-    acl_name = 'aclnqt'
-
     @aetest.test
-    def configure_acl(self):
+    def configure_acl(self, parameters):
+        acl_name = parameters['acl_name']
+        intf = parameters['device1']['intf']
+        ip_address = parameters['device1']['ip_address']
         try:
-            reply_command = NetconfCommonFunctions.configure_acl_on_interface(device)
+            reply_command = NetconfCommonFunctions.configure_acl_on_interface(device, intf, ip_address, acl_name)
             logging.info("Configuration Reply: %s", reply_command)
         except Exception as e:
             self.failed(f"Failed to send configuration command: {e}")
 
     @aetest.test
-    def verify_acl(self):
-        verification_request = f"""
-        <?xml version="1.0" encoding="UTF-8"?>
-        <nf:rpc message-id="112" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
-            <nxos:exec-command>
-                <nxos:cmd>show running-config interface Ethernet1/5</nxos:cmd>
-            </nxos:exec-command>
-        </nf:rpc>
-        """
+    def unconfigure_acl(self, parameters):
+        acl_name = parameters['acl_name']
+        intf = parameters['device1']['intf']
         try:
-            verification_reply = device.nc.request(verification_request)
-            acl_output = str(verification_reply)
-            rule = r"interface Ethernet1/5\s+ip address 10\.10\.10\.1 255\.255\.255\.0\s+ip access-group aclnqt in"
-
-            match = re.search(rule, acl_output)
-            if match:
-                logging.info("The ACL application to interface is verified successfully.")
-                logging.info("Matched Line: %s", match.group(0))
-            else:
-                self.failed(f"ACL application to interface matching '{rule}' not found in the device configuration")
-        except Exception as e:
-            self.failed(f"Failed to send verification command: {e}")
-
-    @aetest.test
-    def unconfigure_acl(self):
-        try:
-            reply_command = NetconfCommonFunctions.unconfigure_acl_on_interface(device)
+            reply_command = NetconfCommonFunctions.unconfigure_acl_on_interface(device, intf, acl_name)
             logging.info("Unconfiguration Reply: %s", reply_command)
         except Exception as e:
             self.failed(f"Failed to send unconfiguration command: {e}")
@@ -104,13 +87,15 @@ class ConfigureACLOnInterface(aetest.Testcase):
 class CommonCleanup(aetest.CommonCleanup):
     @aetest.subsection
     def disconnect(self):
-        device.nc.disconnect()
-        assert not device.nc.connected, "Device disconnection failed"
+        if hasattr(device, 'nc') and device.nc.connected:
+            device.nc.disconnect()
+            assert not device.nc.connected, "Device disconnection failed"
+        else:
+            logger.info("Device was not connected.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
-    from pyats import aetest
-    from genie.testbed import load
+    from pyats.topology import loader
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--testbed', dest='testbed', type=loader.load)
