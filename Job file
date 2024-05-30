@@ -2,7 +2,7 @@ from pyats.easypy import run
 import os
 
 def main():
-    path = os.path.dirname(__file__)
+    run(testscript='testcase.py')
 
-    # Run test cases with the testbed and data files
-    run(testscript=os.path.join(path, 'test_acl_device.py'), testbed='testbed.yaml', datafile=os.path.join(path, 'datafile.yaml'))
+if __name__ == '__main__':
+    main()
