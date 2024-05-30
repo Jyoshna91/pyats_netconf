@@ -27,7 +27,8 @@ class ConfigureACLOnDevice(aetest.Testcase):
             self.failed(f"Failed to send configuration command: {e}")
 
     @aetest.test
-    def verify_acl(self):
+    def verify_acl_and_ping(self):
+        destination_ip = "192.168.10.1"  # Use the appropriate destination IP address for your setup
         verification_request = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <nf:rpc message-id="111" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
@@ -47,6 +48,21 @@ class ConfigureACLOnDevice(aetest.Testcase):
                 logging.info("Matched Line: %s", match.group(0))
             else:
                 self.failed(f"ACL rule matching '{rule}' not found in the device configuration")
+            
+            # Ping the destination IP
+            ping_reply = NetconfCommonFunctions.ping_device(device, destination_ip)
+            logging.info("Ping Reply: %s", ping_reply)
+
+            # Validate ping results
+            ping_result = NetconfCommonFunctions.validate_ping(ping_reply)
+            sent_pkt = int(ping_result.get('sent_pkt', 0))
+            receive_pkt = int(ping_result.get('receive_pkt', 0))
+            pkt_loss = ping_result.get('pkt_loss', "0%")
+
+            if sent_pkt == receive_pkt and pkt_loss == "0%":
+                self.passed("Ping successful with no packet loss")
+            else:
+                self.failed("Ping failed with packet loss: {}".format(pkt_loss))
 
         except Exception as e:
             self.failed(f"Failed to send verification command: {e}")
@@ -71,7 +87,8 @@ class ConfigureACLOnInterface(aetest.Testcase):
             self.failed(f"Failed to send configuration command: {e}")
 
     @aetest.test
-    def verify_acl(self):
+    def verify_acl_and_ping(self):
+        destination_ip = "192.168.10.1"  # Use the appropriate destination IP address for your setup
         verification_request = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <nf:rpc message-id="112" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
@@ -90,6 +107,22 @@ class ConfigureACLOnInterface(aetest.Testcase):
                 logging.info("Matched Line: %s", match.group(0))
             else:
                 self.failed(f"ACL application to interface matching '{rule}' not found in the device configuration")
+            
+            # Ping the destination IP
+            ping_reply = NetconfCommonFunctions.ping_device(device, destination_ip)
+            logging.info("Ping Reply: %s", ping_reply)
+
+            # Validate ping results
+            ping_result = NetconfCommonFunctions.validate_ping(ping_reply)
+            sent_pkt = int(ping_result.get('sent_pkt', 0))
+            receive_pkt = int(ping_result.get('receive_pkt', 0))
+            pkt_loss = ping_result.get('pkt_loss', "0%")
+
+            if sent_pkt == receive_pkt and pkt_loss == "0%":
+                self.passed("Ping successful with no packet loss")
+            else:
+                self.failed("Ping failed with packet loss: {}".format(pkt_loss))
+
         except Exception as e:
             self.failed(f"Failed to send verification command: {e}")
 
