@@ -14,22 +14,19 @@ class CommonSetup(aetest.CommonSetup):
         device.connect(alias='nc', via='netconf')
         assert device.nc.connected, "Device connection failed"
 
-class ConfigureAndVerifyACL(aetest.Testcase):
+class ConfigureVerifyAndUnconfigureACL(aetest.Testcase):
     acl_name = 'aclnqt'
 
     @aetest.test
-    def configure_acl_on_device(self):
+    def configure_acl(self):
         try:
-            reply_command = NetconfCommonFunctions.configure_acl_on_device(device)
-            logging.info("Configuration on Device Reply: %s", reply_command)
-        except Exception as e:
-            self.failed(f"Failed to send configuration command: {e}")
-
-    @aetest.test
-    def configure_acl_on_interface(self):
-        try:
-            reply_command = NetconfCommonFunctions.configure_acl_on_interface(device)
-            logging.info("Configuration on Interface Reply: %s", reply_command)
+            # Configure ACL on the device
+            reply_command_device = NetconfCommonFunctions.configure_acl_on_device(device)
+            logging.info("Configuration on Device Reply: %s", reply_command_device)
+            
+            # Configure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.configure_acl_on_interface(device)
+            logging.info("Configuration on Interface Reply: %s", reply_command_interface)
         except Exception as e:
             self.failed(f"Failed to send configuration command: {e}")
 
@@ -57,18 +54,15 @@ class ConfigureAndVerifyACL(aetest.Testcase):
             self.failed(f"Failed to send verification command: {e}")
 
     @aetest.test
-    def unconfigure_acl_on_device(self):
+    def unconfigure_acl(self):
         try:
-            reply_command = NetconfCommonFunctions.unconfigure_acl_on_device(device)
-            logging.info("Unconfiguration on Device Reply: %s", reply_command)
-        except Exception as e:
-            self.failed(f"Failed to send unconfiguration command: {e}")
-
-    @aetest.test
-    def unconfigure_acl_on_interface(self):
-        try:
-            reply_command = NetconfCommonFunctions.unconfigure_acl_on_interface(device)
-            logging.info("Unconfiguration on Interface Reply: %s", reply_command)
+            # Unconfigure ACL on the device
+            reply_command_device = NetconfCommonFunctions.unconfigure_acl_on_device(device)
+            logging.info("Unconfiguration on Device Reply: %s", reply_command_device)
+            
+            # Unconfigure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.unconfigure_acl_on_interface(device)
+            logging.info("Unconfiguration on Interface Reply: %s", reply_command_interface)
         except Exception as e:
             self.failed(f"Failed to send unconfiguration command: {e}")
 
