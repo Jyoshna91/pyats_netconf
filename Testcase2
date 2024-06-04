@@ -1,0 +1,187 @@
+from pyats.topology import loader
+from pyats import aetest
+import yaml
+import re, logging
+from lib import NetconfCommonFunctions
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Load data from config file
+with open("config_data.yaml", "r") as file:
+    config_data = yaml.safe_load(file)
+
+acl_data = {
+    'acl_name': config_data['acl_name'],
+    'rule1': config_data['rule1'],
+    'rule2': config_data['rule2'],
+    'rule3': config_data['rule3'],
+    'bound': config_data['bound'],
+    'bound1': config_data['bound1'],
+    'device1_intf': config_data['device1']['intf'],
+    'device1_ip': config_data['device1']['ip_address'],
+    'device2_intf1': config_data['device2']['intf1'],
+    'device2_ip1': config_data['device2']['ip_address1'],
+    'device2_intf2': config_data['device2']['intf2'],
+    'device2_ip2': config_data['device2']['ip_address2'],
+    'device3_intf': config_data['device3']['intf'],
+    'device3_ip': config_data['device3']['ip_address'],
+    'subnet_mask': config_data['subnet_mask']
+}
+
+class CommonSetup(aetest.CommonSetup):
+    @aetest.subsection
+    def connect_to_devices(self, testbed):
+        global devices
+        devices = {
+            'dut1': testbed.devices['n9k1'],
+            'dut2': testbed.devices['n9k4'],
+            'dut3': testbed.devices['n9k3']
+        }
+        for name, device in devices.items():
+            device.connect(alias='nc', via='netconf')
+            assert device.nc.connected, f"Device {name} connection failed"
+
+class ACLPermitTest(aetest.Testcase):
+    @aetest.setup
+    def setup(self):
+        device = devices['dut1']
+        try:
+            NetconfCommonFunctions.configure_acl_on_device(device, acl_data['acl_name'], acl_data['rule1'])
+        except Exception as e:
+            self.failed(f"Failed to configure ACL: {e}")
+
+    @aetest.test
+    def configure_acl(self):
+        device = devices['dut1']
+        try:
+            # Configure permit ACL on the device
+            reply_command_device = NetconfCommonFunctions.configure_acl_on_device(device, acl_data['acl_name'], acl_data['rule1'])
+            logging.info(f"Configuration on Device {device.name} Reply: {reply_command_device}")
+
+            # Configure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.configure_acl_on_interface(device, acl_data['device1_intf'], acl_data['acl_name'], acl_data['bound'])
+            logging.info(f"Configuration on Interface {device.name} Reply: {reply_command_interface}")
+        except Exception as e:
+            self.failed(f"Failed to send configuration command on {device.name}: {e}")
+
+    @aetest.test
+    def verify_acl_and_ping(self):
+        device = devices['dut1']
+        try:
+            # Verification XML structure
+            verification_request = f"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <nf:rpc message-id="112" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+                <nxos:exec-command>
+                    <nxos:cmd>show ip access-lists {acl_data['acl_name']}</nxos:cmd>
+                </nxos:exec-command>
+            </nf:rpc>
+            """
+            verification_reply = device.nc.request(verification_request)
+            acl_output = str(verification_reply)
+            logging.info(f"ACL Verification output on {device.name}: {acl_output}")
+
+            # Ping the destination IP
+            ping_reply = NetconfCommonFunctions.ping_device(device, acl_data['device1_intf'], acl_data['device3_ip'])
+            logging.info(f"Ping Reply from {device.name}: {ping_reply}")
+
+            # Validate ping results
+            ping_result = NetconfCommonFunctions.validate_ping(ping_reply)
+            sent_pkt = int(ping_result.get('sent_pkt', 0))
+            receive_pkt = int(ping_result.get('receive_pkt', 0))
+            pkt_loss = ping_result.get('pkt_loss', "0%")
+
+            if sent_pkt == receive_pkt and pkt_loss == "0%":
+                logger.info(f"Ping successful with no packet loss on device {device.name}")
+                self.passed(f"Ping successful with no packet loss on device {device.name}")
+            else:
+                logger.info(f"Ping failed with packet loss on device {device.name}")
+                self.failed(f"Ping failed with packet loss on device {device.name}: {pkt_loss}")
+        except Exception as e:
+            self.failed(f"Failed to send verification command on {device.name}: {e}")
+
+    @aetest.cleanup
+    def unconfigure_acl(self):
+        device = devices['dut1']
+        try:
+            # Unconfigure ACL on the device
+            reply_command_device = NetconfCommonFunctions.unconfigure_acl_on_device(device, acl_data['acl_name'])
+            logging.info(f"Unconfiguration on Device {device.name} Reply: {reply_command_device}")
+
+            # Unconfigure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.unconfigure_acl_on_interface(device, acl_data['device1_intf'], acl_data['acl_name'], acl_data['bound'])
+            logging.info(f"Unconfiguration on Interface {device.name} Reply: {reply_command_interface}")
+        except Exception as e:
+            self.failed(f"Failed to send unconfiguration command on {device.name}: {e}")
+
+class ACLDenyTest(aetest.Testcase):
+    @aetest.setup
+    def setup(self):
+        device = devices['dut2']
+        try:
+            NetconfCommonFunctions.configure_acl_on_device(device, acl_data['acl_name'], acl_data['rule2'])
+        except Exception as e:
+            self.failed(f"Failed to configure ACL: {e}")
+
+    @aetest.test
+    def configure_acl(self):
+        device = devices['dut2']
+        try:
+            # Configure deny ACL on the device
+            reply_command_device = NetconfCommonFunctions.configure_acl_on_device(device, acl_data['acl_name'], acl_data['rule2'])
+            logging.info(f"Configuration on Device {device.name} Reply: {reply_command_device}")
+
+            # Configure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.configure_acl_on_interface(device, acl_data['device1_intf'], acl_data['acl_name'], acl_data['bound'])
+            logging.info(f"Configuration on Interface {device.name} Reply: {reply_command_interface}")
+        except Exception as e:
+            self.failed(f"Failed to send configuration command on {device.name}: {e}")
+
+    @aetest.test
+    def verify_acl_and_ping(self):
+        device = devices['dut3']
+        try:
+            # Verification XML structure
+            verification_request = f"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <nf:rpc message-id="112" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+                <nxos:exec-command>
+                    <nxos:cmd>show ip access-lists {acl_data['acl_name']}</nxos:cmd>
+                </nxos:exec-command>
+            </nf:rpc>
+            """
+            verification_reply = device.nc.request(verification_request)
+            acl_output = str(verification_reply)
+            logging.info(f"ACL Verification output on {device.name}: {acl_output}")
+
+            # Ping the destination IP
+            ping_reply = NetconfCommonFunctions.ping_device(device, acl_data['device1_intf'], acl_data['device2_ip1'])
+            logging.info(f"Ping Reply from {device.name}: {ping_reply}")
+
+            # Validate ping results
+            ping_result = NetconfCommonFunctions.validate_ping(ping_reply)
+            sent_pkt = int(ping_result.get('sent_pkt', 0))
+            receive_pkt = int(ping_result.get('receive_pkt', 0))
+            pkt_loss = ping_result.get('pkt_loss', "0%")
+
+            if sent_pkt != receive_pkt and pkt_loss != "0%":
+                logger.info(f"Ping failed as expected with packet loss on device {device.name}")
+                self.passed(f"Ping failed as expected with packet loss on device {device.name}")
+            else:
+                logger.info(f"Ping succeeded unexpectedly on device {device.name}")
+                self.failed(f"Ping succeeded unexpectedly on device {device.name}")
+        except Exception as e:
+            self.failed(f"Failed to send verification command on {device.name}: {e}")
+
+    @aetest.cleanup
+    def unconfigure_acl(self):
+        device = devices['dut2']
+        try:
+            # Unconfigure ACL on the device
+            reply_command_device = NetconfCommonFunctions.unconfigure_acl_on_device(device, acl_data['acl_name'])
+            logging.info(f"Unconfiguration on Device {device.name} Reply: {reply_command_device}")
+
+            # Unconfigure ACL on the interface
+            reply_command_interface = NetconfCommonFunctions.unconfigure_acl_on_interface(device, acl_data['device1_intf'], acl_data['acl_name'], acl_data['bound'])
+            logging.info(f"Unconfiguration on Interface {device.name} Reply: {
