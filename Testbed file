@@ -1,51 +1,86 @@
 devices:
   n9k1:
-    os: 'nxos'
-    type: 'router'
     connections:
       cli:
-        protocol: ssh
-        ip: "10.133.35.148"
+        ip: 10.133.35.148
         port: 22
-        username: "admin"
-        password: "tcs123"
+        protocol: ssh
       netconf:
         class: yang.connector.Netconf
         ip: "10.133.35.148"
         port: 22
         username: "admin"
         password: "tcs123"
+    credentials:
+      default:
+        password: tcs123
+        username: admin
+      enable:
+        password: tcs123
+    os: nxos
+    type: nxos
+    alias: 'dut1'
 
-  n9k2:
-    os: 'nxos'
-    type: 'router'
+  n9k4:
+    alias: 'dut2'
     connections:
       cli:
-        protocol: ssh
-        ip: "10.133.35.143"
+        ip: 10.133.35.143
         port: 22
-        username: "admin"
-        password: "tcs123"
+        protocol: ssh
       netconf:
         class: yang.connector.Netconf
         ip: "10.133.35.143"
         port: 22
         username: "admin"
         password: "tcs123"
+    credentials:
+      default:
+        password: tcs123
+        username: admin
+      enable:
+        password: tcs123
+    os: nxos
+    type: nxos
 
   n9k3:
-    os: 'nxos'
-    type: 'router'
+    alias: 'dut3'
     connections:
       cli:
-        protocol: ssh
-        ip: "10.133.35.152"
+        ip: 10.133.35.152
         port: 22
-        username: "admin"
-        password: "tcs123"
+        protocol: ssh
       netconf:
         class: yang.connector.Netconf
         ip: "10.133.35.152"
         port: 22
         username: "admin"
         password: "tcs123"
+    credentials:
+      default:
+        password: tcs123
+        username: admin
+      enable:
+        password: tcs123
+    os: nxos
+    type: nxos
+
+topology:
+  n9k1:
+    interfaces:
+      Ethernet1/5:
+        link: uut1_uut3_1
+        type: ethernet
+  n9k4:
+    interfaces:
+      Ethernet1/9:
+        link: uut2_uut3_1
+        type: ethernet
+  n9k3:
+    interfaces:
+      Ethernet1/5:
+        link: uut3_uut1_1
+        type: ethernet
+      Ethernet1/9:
+        link: uut3_uut2_1
+        type: ethernet
