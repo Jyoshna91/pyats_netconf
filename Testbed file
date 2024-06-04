@@ -7,9 +7,45 @@ devices:
         protocol: ssh
         ip: "10.133.35.148"
         port: 22
+        username: "admin"
+        password: "tcs123"
       netconf:
         class: yang.connector.Netconf
         ip: "10.133.35.148"
+        port: 22
+        username: "admin"
+        password: "tcs123"
+
+  n9k2:
+    os: 'nxos'
+    type: 'router'
+    connections:
+      cli:
+        protocol: ssh
+        ip: "10.133.35.143"
+        port: 22
+        username: "admin"
+        password: "tcs123"
+      netconf:
+        class: yang.connector.Netconf
+        ip: "10.133.35.143"
+        port: 22
+        username: "admin"
+        password: "tcs123"
+
+  n9k3:
+    os: 'nxos'
+    type: 'router'
+    connections:
+      cli:
+        protocol: ssh
+        ip: "10.133.35.152"
+        port: 22
+        username: "admin"
+        password: "tcs123"
+      netconf:
+        class: yang.connector.Netconf
+        ip: "10.133.35.152"
         port: 22
         username: "admin"
         password: "tcs123"
