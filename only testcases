@@ -218,3 +218,52 @@ if __name__ == '__main__':
     args, unknown = parser.parse_known_args()
 
     aetest.main(**vars(args))
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ACLTestcaseInOutBound(aetest.Testcase):
+
+    @aetest.setup
+    def configure_acl_on_device(self):
+        uut4 = devices['dut2']
+        logger.info(f"Configure ACL on device4: {uut4.name}")
+        NetconfCommonFunctions.configure_acl_on_device(uut4, acl_name, rule1)
+
+        logger.info("Configure ACL on interface")
+        NetconfCommonFunctions.configure_acl_on_interface(uut4, device2_intf1, acl_name, bound)
+
+    @aetest.test
+    def verify_acl_configuration(self):
+        uut4 = devices['dut2']
+        logger.info("Check if ACL is configured")
+        verification_reply = NetconfCommonFunctions.verify_acl(uut4, acl_name)
+        acl_output = str(verification_reply)
+        rule_pattern = r'<(mod:permitdeny)>[a-z]{6}'
+        match = re.search(rule_pattern, acl_output)
+        if match:
+            logging.info(f"The ACL rule is verified successfully on device {acl_name}.")
+            logging.info(f"Matched Line on {acl_name}: {match.group(0)}")
+        else:
+            self.failed(f"ACL rule matching '{rule_pattern}' not found in the device {acl_name} configuration")
+
+    @aetest.cleanup
+    def unconfigure_acl_on_device(self):
+        uut4 = devices['dut2']
+        logger.info("Unconfigure ACL on interface")
+        NetconfCommonFunctions.unconfigure_acl_on_interface(uut4, device2_intf1, acl_name, bound)
+
+        logger.info("Configure outbound ACL on interface")
+        NetconfCommonFunctions.configure_acl_on_interface(uut4, device2_intf2, acl_name, bound1)
+
+        logger.info(f"Unconfigure ACL on device: {uut4.name}")
+        NetconfCommonFunctions.unconfigure_acl_on_device(uut4, acl_name)
