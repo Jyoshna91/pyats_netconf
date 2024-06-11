@@ -214,3 +214,87 @@ xmlns:nxos="http://www.cisco.com/nxos:1.0" message-id="110">
     <nxos:cmd>show access-list</nxos:cmd>
   </nxos:exec-command>
 </nf:rpc>]]>]]>
+
+
+
+lib file:
+---------
+
+from genie.testbed import load
+from pyats.topology import loader
+from pyats import aetest
+import re, logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+class NetconfCommonFunctions:
+    @staticmethod
+    def configure_acl_on_device(device):
+        command_request = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="107" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+               <nxos:cmd>conf t ; ip access-list aclnqt ; 10 permit ip 10.10.10.1/24 any ; 20 permit ip 192.168.10.1/24 any</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+        return device.nc.request(command_request)
+
+    @staticmethod
+    def unconfigure_acl_on_device(device):
+        command_request = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="108" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+           <nxos:exec-command>
+              <nxos:cmd>conf t ; no ip access-list aclnqt</nxos:cmd>
+           </nxos:exec-command>
+        </nf:rpc>
+        """
+        return device.nc.request(command_request)
+
+    @staticmethod
+    def configure_acl_on_interface(device):
+        command_request = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="109" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>conf t ; interface Ethernet1/5 ; no switchport ; ip address 10.10.10.1 255.255.255.0 ; ip access-group aclnqt in ; no shutdown</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+        return device.nc.request(command_request)
+
+    @staticmethod
+    def unconfigure_acl_on_interface(device):
+        command_request = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="110" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>conf t ; interface Ethernet1/5 ; no ip access-group aclnqt in ; shutdown</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+        return device.nc.request(command_request)
+
+    @staticmethod
+    def ping_device(device, destination_ip):
+        command_request = f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="111" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>ping {destination_ip}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+        return device.nc.request(command_request)
+
+    @staticmethod
+    def validate_ping(input):
+        pattern = re.compile(r'(?P<sent_pkt>\d+) packets transmitted, (?P<receive_pkt>\d+) packets received, (?P<pkt_loss>\d+)% packet loss')
+        out_dict = {}
+        for line in input.split('\n'):
+            p1 = pattern.match(line)
+            if p1:
+                out_dict.update(p1.groupdict())
+        return out_dict
