@@ -1,3 +1,16 @@
+from genie.testbed import load
+from pyats import aetest
+import re, logging
+import time
+from pyats.results import Passed, Failed
+from acl_lib import acl_common_functions
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+global devices
+
+# Common Setup
 class CommonSetup(aetest.CommonSetup):
     @aetest.subsection
     def connect_to_devices(self, testbed):
@@ -11,14 +24,13 @@ class CommonSetup(aetest.CommonSetup):
             device.connect(alias='nc', via='netconf')
             assert device.nc.connected, f"Device {name} connection failed"
 
+# Permit ACL Testcase
 class PermitACLTestcase(aetest.Testcase):
-
     @aetest.setup
     def setup(self):
         uut1 = devices['dut1']
         logger.info(f"Configure permit ACL on device1: {uut1.name}")
         NetconfCommonFunctions.configure_acl_on_device(uut1, acl_name, rule1)
-
         logger.info("Configure permit ACL on interface")
         NetconfCommonFunctions.configure_acl_on_interface(uut1, device1_intf, acl_name, bound)
 
@@ -41,18 +53,16 @@ class PermitACLTestcase(aetest.Testcase):
         uut1 = devices['dut1']
         logger.info("Unconfigure permit ACL on interface")
         NetconfCommonFunctions.unconfigure_acl_on_interface(uut1, device1_intf, acl_name, bound)
-
         logger.info(f"Unconfigure permit ACL on device: {uut1.name}")
         NetconfCommonFunctions.unconfigure_acl_on_device(uut1, acl_name)
 
+# Deny ACL Testcase
 class DenyACLTestcase(aetest.Testcase):
-
     @aetest.setup
     def setup(self):
         uut4 = devices['dut2']
         logger.info(f"Configure deny ACL on device2: {uut4.name}")
         NetconfCommonFunctions.configure_acl_on_device(uut4, acl_name, rule2)
-
         logger.info("Configure deny ACL on interface")
         NetconfCommonFunctions.configure_acl_on_interface(uut4, device1_intf, acl_name, bound)
 
@@ -75,21 +85,18 @@ class DenyACLTestcase(aetest.Testcase):
         uut4 = devices['dut2']
         logger.info("Unconfigure deny ACL on interface")
         NetconfCommonFunctions.unconfigure_acl_on_interface(uut4, device1_intf, acl_name, bound)
-
         logger.info(f"Unconfigure deny ACL on device: {uut4.name}")
         NetconfCommonFunctions.unconfigure_acl_on_device(uut4, acl_name)
 
+# ACL with Multiple Rules
 class ACLTestcaseMultipleRules(aetest.Testcase):
-
     @aetest.setup
     def configure_acl_on_device(self):
         uut1 = devices['dut1']
         logger.info(f"Configure ACL on device1: {uut1.name} with rule3")
         NetconfCommonFunctions.configure_acl_on_device(uut1, acl_name, rule3)
-
         logger.info(f"Configure ACL on device1: {uut1.name} with rule2")
         NetconfCommonFunctions.configure_acl_on_device(uut1, acl_name, rule2)
-
         logger.info("Configure ACL on interface")
         NetconfCommonFunctions.configure_acl_on_interface(uut1, device1_intf, acl_name, bound)
 
@@ -114,18 +121,16 @@ class ACLTestcaseMultipleRules(aetest.Testcase):
         uut1 = devices['dut1']
         logger.info("Unconfigure ACL on interface")
         NetconfCommonFunctions.unconfigure_acl_on_interface(uut1, device1_intf, acl_name, bound)
-
         logger.info(f"Unconfigure ACL on device: {uut1.name}")
         NetconfCommonFunctions.unconfigure_acl_on_device(uut1, acl_name)
 
+# ACL In & Out Bounds
 class ACLTestcaseInOutBound(aetest.Testcase):
-
     @aetest.setup
     def configure_acl_on_device(self):
         uut4 = devices['dut2']
         logger.info(f"Configure ACL on device4: {uut4.name}")
         NetconfCommonFunctions.configure_acl_on_device(uut4, acl_name, rule1)
-
         logger.info("Configure ACL on interface")
         NetconfCommonFunctions.configure_acl_on_interface(uut4, device2_intf1, acl_name, bound)
 
@@ -148,13 +153,54 @@ class ACLTestcaseInOutBound(aetest.Testcase):
         uut4 = devices['dut2']
         logger.info("Unconfigure ACL on interface")
         NetconfCommonFunctions.unconfigure_acl_on_interface(uut4, device2_intf1, acl_name, bound)
-
         logger.info("Configure outbound ACL on interface")
         NetconfCommonFunctions.configure_acl_on_interface(uut4, device2_intf2, acl_name, bound1)
-
         logger.info(f"Unconfigure ACL on device: {uut4.name}")
         NetconfCommonFunctions.unconfigure_acl_on_device(uut4, acl_name)
 
+# ACL Configured on Router
+class ACLConfiguredOnRouter(aetest.Testcase):
+    @aetest.setup
+    def configure_acl_on_device(self):
+        uut1 = devices['dut1']
+        logger.info("Configure ACL on device")
+        NetconfCommonFunctions.configure_acl_on_device(uut1, acl_name, rule2)
+
+    @aetest.test
+    def check_acl_configured(self):
+        uut1 = devices['dut1']
+        logger.info("Check if ACL is configured")
+        result = uut1.execute("show access-list {}".format(acl_name))
+        logger.info(result)
+        if result:
+            logger.info("ACL configured")
+            self.passed("Success: ACL is configured on device and on interface successfully")
+        else:
+            logger.info("ACL not configured")
+            self.failed("Failed: ACL is not configured on device and on interface")
+
+    @aetest.cleanup
+    def unconfigure_acl_on_device(self):
+        uut1 = devices['dut1']
+        logger.info("Unconfigure ACL on device")
+        NetconfCommonFunctions.unconfigure_acl_on_device(uut1, acl_name)
+
+# ACL Not Configured on Router
+class ACLNotConfiguredOnRouter(aetest.Testcase):
+    @aetest.test
+    def check_acl_not_configured(self):
+        uut1 = devices['dut1']
+        logger.info("Check if ACL is not configured on device")
+        result = uut1.execute("show access-list")
+        logger.info(result)
+        if acl_name not in result:
+            logger.info("ACL named {} not configured on device".format(acl_name))
+            self.passed("Success: ACL {} not configured on device and on interface successfully".format(acl_name))
+        else:
+            logger.info("ACL configured")
+            self.failed("Failed: ACL is configured on device and on interface")
+
+# Common Cleanup
 class CommonCleanup(aetest.CommonCleanup):
     @aetest.subsection
     def disconnect(self):
