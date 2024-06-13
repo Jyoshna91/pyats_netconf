@@ -1,57 +1,159 @@
-from genie.testbed import load
 from pyats.topology import loader
 from pyats import aetest
 import re, logging
-import pdb
+from netconf_lib import NetconfCommonFunctions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class NetconfCommonFunctions:
-    @staticmethod
-    def configure_acl_on_device(device):
-        command_request = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <nf:rpc message-id="107" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
-            <nxos:exec-command>
-               <nxos:cmd>conf t ; ip access-list aclnqt ; 10 permit ip 10.10.10.1/24 any ; 20 permit ip 192.168.10.1/24 any</nxos:cmd>
-            </nxos:exec-command>
-        </nf:rpc>
-        """
-        return device.nc.request(command_request)
+class CommonSetup(aetest.CommonSetup):
 
-    @staticmethod
-    def unconfigure_acl_on_device(device):
-        command_request = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <nf:rpc message-id="108" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
-           <nxos:exec-command>
-              <nxos:cmd>conf t ; no ip access-list aclnqt</nxos:cmd>
-           </nxos:exec-command>
-        </nf:rpc>
-        """
-        return device.nc.request(command_request)
+    @aetest.subsection
+    def print_testbed_information(self, testbed):
+        global uut1, uut2, uut3, device_list, device_info
+        uut1 = testbed.devices['dut1']
+        self.parent.parameters.update(uut1=uut1)
+        uut2 = testbed.devices['dut3']
+        self.parent.parameters.update(uut2=uut2)
+        uut3 = testbed.devices['dut2']
+        self.parent.parameters.update(uut3=uut3)
 
-    @staticmethod
-    def configure_acl_on_interface(device):
-        command_request = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <nf:rpc message-id="109" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
-            <nxos:exec-command>
-                <nxos:cmd>conf t ; interface Ethernet1/5 ; no switchport ; ip address 10.10.10.1 255.255.255.0 ; ip access-group aclnqt in ; no shutdown</nxos:cmd>
-            </nxos:exec-command>
-        </nf:rpc>
-        """
-        return device.nc.request(command_request)
+        device_list = [uut1, uut2, uut3]
+        device_info = {}
 
-    @staticmethod
-    def unconfigure_acl_on_interface(device):
-        command_request = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <nf:rpc message-id="110" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
-            <nxos:exec-command>
-                <nxos:cmd>conf t ; interface Ethernet1/5 ; no ip access-group aclnqt in ; shutdown</nxos:cmd>
-            </nxos:exec-command>
-        </nf:rpc>
-        """
-        return device.nc.request(command_request)
+        if not testbed:
+            logging.info("No testbed was provided to script launch")
+        else:
+            uut = testbed.devices['dut1']
+            for device in testbed:
+                logging.info("Device name : %s" % device.name)
+                device_info.update({device.name: []})
+                for intf in device:
+                    logging.info("Interface : %s" % intf.name)
+                    device_info[device.name].append(intf.name)
+                    if intf.link:
+                        logging.info("Link : %s" % intf.link.name)
+                    else:
+                        logging.info("Link : None")
+        logger.info("Device and interfaces used for acl feature")
+        logger.info(device_info)
+
+    @aetest.subsection
+    def connect_to_devices(self, testbed):
+        logger.info("Connecting to devices")
+        for uut in device_list:
+            uut.connect(via='netconf')
+            if uut.is_connected():
+                logging.info("Successfully connected to device %s" % uut.name)
+                output = NetconfCommonFunctions.show_version(uut)
+                res = NetconfCommonFunctions.sh_version(output.xml)
+                logging.info("Software version :%s" % res['version'])
+                logging.info("Image File :%s" % res['image'])
+            else:
+                logging.info("Device %s not connected" % uut.name)
+
+    @aetest.subsection
+    def configure_ip_address_to_interfaces(self, testbed):
+        logger.info("Assign ip address to interfaces")
+        NetconfCommonFunctions.configure_ip_address(uut1, 'ethernet1/5', '192.168.60.1', '255.255.255.0')
+        NetconfCommonFunctions.configure_ip_address(uut2, 'ethernet1/5', '192.168.60.2', '255.255.255.0')
+        NetconfCommonFunctions.configure_ip_address(uut2, 'ethernet1/9', '192.168.11.1', '255.255.255.0')
+        NetconfCommonFunctions.configure_ip_address(uut3, 'ethernet1/9', '192.168.11.2', '255.255.255.0')
+
+    @aetest.subsection
+    def enable_rip_on_device(self, testbed):
+        logger.info("Enable RIP on devices")
+        for uut in device_list:
+            NetconfCommonFunctions.enabling_rip(uut)
+
+    @aetest.subsection
+    def configure_rip_on_devices(self, testbed):
+        logger.info("Configure RIP on interfaces")
+        NetconfCommonFunctions.configure_rip_interface(uut1, 'ethernet1/5')
+        NetconfCommonFunctions.configure_rip_interface(uut2, 'ethernet1/5')
+        NetconfCommonFunctions.configure_rip_interface(uut2, 'ethernet1/9')
+        NetconfCommonFunctions.configure_rip_interface(uut3, 'ethernet1/9')
+
+class ACLTestcasePermit(aetest.Testcase):
+
+    @aetest.setup
+    def configure_acl_on_device(self):
+        logger.info("Configure ACL on device2: {}".format(uut2.name))
+        NetconfCommonFunctions.configure_acl_on_device(uut2, 'permit icmp 192.168.11.1/24 any')
+
+        logger.info("Configure ACL on interface")
+        NetconfCommonFunctions.configure_acl_on_interface(uut2, 'ethernet1/5', 'acl1', 'in')
+
+    @aetest.test
+    def check_acl_configuration(self):
+        logger.info("Check if ACL is configured")
+        acl_config = NetconfCommonFunctions.verify_acl(uut2, 'acl1')
+        logger.info(acl_config)
+        if 'acl1' in acl_config.xml:
+            logger.info("ACL configured on device")
+        else:
+            self.errored('ACL is not configured on device')
+
+    @aetest.cleanup
+    def unconfigure_acl_on_device(self):
+        logger.info("Unconfigure ACL on interface")
+        NetconfCommonFunctions.unconfigure_acl_on_interface(uut2, 'ethernet1/5', 'acl1', 'in')
+
+        logger.info("Unconfigure ACL on device: {}".format(uut2.name))
+        NetconfCommonFunctions.unconfigure_acl_on_device(uut2, 'acl1')
+
+class ACLTestcaseDeny(aetest.Testcase):
+
+    @aetest.setup
+    def configure_acl_on_device(self):
+        logger.info("Configure ACL on device1: {}".format(uut1.name))
+        NetconfCommonFunctions.configure_acl_on_device(uut1, 'deny icmp 192.168.11.1/24 any')
+
+        logger.info("Configure ACL on interface")
+        NetconfCommonFunctions.configure_acl_on_interface(uut1, 'ethernet1/5', 'acl1', 'in')
+
+    @aetest.test
+    def check_acl_configuration(self):
+        logger.info("Check if ACL is configured")
+        acl_config = NetconfCommonFunctions.verify_acl(uut1, 'acl1')
+        logger.info(acl_config)
+        if 'acl1' in acl_config.xml:
+            logger.info("ACL configured on device")
+        else:
+            self.errored('ACL is not configured on device')
+
+    @aetest.cleanup
+    def unconfigure_acl_on_device(self):
+        logger.info("Unconfigure ACL on interface")
+        NetconfCommonFunctions.unconfigure_acl_on_interface(uut1, 'ethernet1/5', 'acl1', 'in')
+
+        logger.info("Unconfigure ACL on device: {}".format(uut1.name))
+        NetconfCommonFunctions.unconfigure_acl_on_device(uut1, 'acl1')
+
+class ACLTestcaseMultipleRules(aetest.Testcase):
+
+    @aetest.setup
+    def configure_acl_on_device(self):
+        logger.info("Configure ACL on device1: {}".format(uut1.name))
+        NetconfCommonFunctions.configure_acl_on_device(uut1, 'permit icmp 192.168.60.1/24 any')
+        NetconfCommonFunctions.configure_acl_on_device(uut1, 'deny icmp 192.168.11.1/24 any')
+
+        logger.info("Configure ACL on interface")
+        NetconfCommonFunctions.configure_acl_on_interface(uut1, 'ethernet1/5', 'acl1', 'in')
+
+    @aetest.test
+    def check_acl_configuration(self):
+        logger.info("Check if ACL is configured")
+        acl_config = NetconfCommonFunctions.verify_acl(uut1, 'acl1')
+        logger.info(acl_config)
+        if 'acl1' in acl_config.xml:
+            logger.info("ACL configured on device")
+        else:
+            self.errored('ACL is not configured on device')
+
+    @aetest.cleanup
+    def unconfigure_acl_on_device(self):
+        logger.info("Unconfigure ACL on interface")
+        NetconfCommonFunctions.unconfigure_acl_on_interface(uut1, 'ethernet1/5', 'acl1', 'in')
+
+        logger.info("Unconfigure ACL on device: {}".format(uut1
