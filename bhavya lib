@@ -1,0 +1,189 @@
+from pyats.topology import loader
+
+class NetworkLibrary:
+    VLAN_ID = 100
+    VLAN_NAME = "default_vlan"
+    VLAN_INT = "Vlan31"
+    VLAN_IP = "192.168.1.1/24"
+    start_vlan1 = 2000
+    state11 = "active"
+
+    @staticmethod
+    def get_testbed():
+        return loader.load("testbed.yaml")
+
+    @staticmethod
+    def connect_to_device(testbed, device_name='n9k1'):
+        device = testbed.devices[device_name]
+        device.connect(alias='nc', via='netconf')
+        return device
+
+    @staticmethod
+    def disconnect_to_device(testbed, device_name='n9k1'):
+        device = testbed.devices[device_name]
+        device.disconnect(alias='nc', via='netconf')
+        return device
+
+    @staticmethod
+    def configurevlanid(vlan_id=VLAN_ID):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="105" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; vlan {vlan_id}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def verifyvlanid(vlan_id=VLAN_ID):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="106" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show vlan id {vlan_id}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def unconfigurevlanid(vlan_id=VLAN_ID):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="107" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; no vlan {vlan_id}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def configurevlanname(vlan_id=VLAN_ID, vlan_name=VLAN_NAME):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="108" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; vlan {vlan_id} ; name {vlan_name}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def verifyvlanname(vlan_name=VLAN_NAME):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="109" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show vlan name {vlan_name}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def unconfigurevlanname(vlan_id=VLAN_ID, vlan_name=VLAN_NAME):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="110" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; no vlan {vlan_id}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+
+    @staticmethod
+    def configurevlaninterface(vlan_id=VLAN_ID, vlan_name=VLAN_NAME, ip_address=VLAN_IP, intf=VLAN_INT):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="111" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; vlan {vlan_id} ; name {vlan_name} ; interface {intf} ; ip address {ip_address}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def verifyvlaninterface(intf=VLAN_INT):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="112" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show running-config interface {intf}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+    @staticmethod
+    def unconfigurevlaninterface(vlan_id=VLAN_ID, vlan_name=VLAN_NAME, ip_address=VLAN_IP, intf=VLAN_INT):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="113" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; no vlan {vlan_id} ; no interface {intf}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def configurevlanstatus(vlan_id=VLAN_ID, vlan_name=VLAN_NAME, state1=state11):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="114" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; vlan {vlan_id} ; name {vlan_name} ; state {state1}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def verifyvlanstatus():
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="115" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show vlan</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+    @staticmethod
+    def unconfigurevlanstatus(vlan_id=VLAN_ID, vlan_name=VLAN_NAME):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="116" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; no vlan {vlan_id}</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def configuresystemvlanreserve(start_vlan=start_vlan1):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="117" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; system vlan {start_vlan} reserve</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def verifysystemvlanreserve():
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="118" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>show system vlan reserved</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
+
+    @staticmethod
+    def unconfiguresystemvlanreserve(start_vlan=start_vlan1):
+        return f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <nf:rpc message-id="119" xmlns:nf="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:nxos="http://www.cisco.com/nxos:1.0">
+            <nxos:exec-command>
+                <nxos:cmd>configure terminal ; no system vlan {start_vlan} reserve</nxos:cmd>
+            </nxos:exec-command>
+        </nf:rpc>
+        """
