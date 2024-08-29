@@ -1,0 +1,119 @@
+2024-08-29T15:45:07: %AETEST-ERROR: Caught an exception while executing section setup:
+2024-08-29T15:45:07: %AETEST-ERROR: Traceback (most recent call last):
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/traineespractice/pavithra/vlan/vlantest/vlconfig/test.py", line 8, in setup
+2024-08-29T15:45:07: %AETEST-ERROR:     self.testbed = NetworkLibrary.get_testbed()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/traineespractice/pavithra/vlan/vlantest/vlconfig/lib.py", line 11, in get_testbed
+2024-08-29T15:45:07: %AETEST-ERROR:     return loader.load("testbed.yaml")
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/pyats/topology/loader/__init__.py", line 44, in load
+2024-08-29T15:45:07: %AETEST-ERROR:     return TestbedFileLoader(**init_kwargs).load(loadable, **kwargs)
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/utils/yaml/loader.py", line 124, in pyats.utils.yaml.loader.Loader.load
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/topology/loader/base.py", line 173, in pyats.topology.loader.base.TestbedFileLoader.load_arbitrary
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/utils/yaml/loader.py", line 213, in pyats.utils.yaml.loader.Loader.load_arbitrary
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/utils/yaml/loader.py", line 214, in pyats.utils.yaml.loader.Loader.load_arbitrary
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/utils/yaml/loader.py", line 299, in pyats.utils.yaml.loader.Loader._load_raw
+2024-08-29T15:45:07: %AETEST-ERROR:   File "src/pyats/utils/yaml/loader.py", line 294, in pyats.utils.yaml.loader.Loader._load_raw
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/__init__.py", line 81, in load
+2024-08-29T15:45:07: %AETEST-ERROR:     return loader.get_single_data()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/constructor.py", line 49, in get_single_data
+2024-08-29T15:45:07: %AETEST-ERROR:     node = self.get_single_node()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/composer.py", line 36, in get_single_node
+2024-08-29T15:45:07: %AETEST-ERROR:     document = self.compose_document()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/composer.py", line 55, in compose_document
+2024-08-29T15:45:07: %AETEST-ERROR:     node = self.compose_node(None, None)
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/composer.py", line 84, in compose_node
+2024-08-29T15:45:07: %AETEST-ERROR:     node = self.compose_mapping_node(anchor)
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/composer.py", line 127, in compose_mapping_node
+2024-08-29T15:45:07: %AETEST-ERROR:     while not self.check_event(MappingEndEvent):
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/parser.py", line 98, in check_event
+2024-08-29T15:45:07: %AETEST-ERROR:     self.current_event = self.state()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/parser.py", line 428, in parse_block_mapping_key
+2024-08-29T15:45:07: %AETEST-ERROR:     if self.check_token(KeyToken):
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/scanner.py", line 116, in check_token
+2024-08-29T15:45:07: %AETEST-ERROR:     self.fetch_more_tokens()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/scanner.py", line 223, in fetch_more_tokens
+2024-08-29T15:45:07: %AETEST-ERROR:     return self.fetch_value()
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/.local/lib/python3.8/site-packages/yaml/scanner.py", line 577, in fetch_value
+2024-08-29T15:45:07: %AETEST-ERROR:     raise ScannerError(None, None,
+2024-08-29T15:45:07: %AETEST-ERROR: yaml.scanner.ScannerError: mapping values are not allowed here
+2024-08-29T15:45:07: %AETEST-ERROR:   in "/home/tcs/traineespractice/pavithra/vlan/vlantest/vlconfig/testbed.yaml", line 10, column 13
+2024-08-29T15:45:07: %AETEST-INFO: The result of section setup is => ERRORED
+2024-08-29T15:45:07: %AETEST-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:07: %AETEST-INFO: |                           Starting section verify                            |
+2024-08-29T15:45:07: %AETEST-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:07: %AETEST-INFO: Blocking verify because testcase setup did not pass.
+2024-08-29T15:45:07: %AETEST-INFO: The result of section verify is => BLOCKED
+2024-08-29T15:45:07: %AETEST-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:07: %AETEST-INFO: |                           Starting section cleanup                           |
+2024-08-29T15:45:07: %AETEST-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:07: %AETEST-ERROR: Caught an exception while executing section cleanup:
+2024-08-29T15:45:07: %AETEST-ERROR: Traceback (most recent call last):
+2024-08-29T15:45:07: %AETEST-ERROR:   File "/home/tcs/traineespractice/pavithra/vlan/vlantest/vlconfig/test.py", line 25, in cleanup
+2024-08-29T15:45:07: %AETEST-ERROR:     NetworkLibrary.unconfigure_vlan(self.device)
+2024-08-29T15:45:07: %AETEST-ERROR: AttributeError: 'VLANTestCase' object has no attribute 'device'
+2024-08-29T15:45:07: %AETEST-INFO: The result of section cleanup is => ERRORED
+2024-08-29T15:45:07: %AETEST-INFO: The result of testcase VLANTestCase is => ERRORED
+2024-08-29T15:45:07: %CONTRIB-INFO: WebEx Token not given as argument or in config. No WebEx notification will be sent
+2024-08-29T15:45:07: %EASYPY-INFO: --------------------------------------------------------------------------------
+2024-08-29T15:45:07: %EASYPY-INFO: Job finished. Wrapping up...
+2024-08-29T15:45:08: %EASYPY-INFO: Creating archive file: /home/tcs/.pyats/archive/24-08/job.2024Aug29_15:45:00.525302.zip
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: |                                Easypy Report                                 |
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: pyATS Instance   : /usr
+2024-08-29T15:45:08: %EASYPY-INFO: Python Version   : cpython-3.8.9 (64bit)
+2024-08-29T15:45:08: %EASYPY-INFO: CLI Arguments    : /home/tcs/.local/bin/pyats run job job.py testbed.yaml
+2024-08-29T15:45:08: %EASYPY-INFO: User             : tcs
+2024-08-29T15:45:08: %EASYPY-INFO: Host Server      : 01HW896031
+2024-08-29T15:45:08: %EASYPY-INFO: Host OS Version  : Ubuntu 16.04 xenial (x86_64)
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Job Information
+2024-08-29T15:45:08: %EASYPY-INFO:     Name         : job
+2024-08-29T15:45:08: %EASYPY-INFO:     Start time   : 2024-08-29 15:45:07.658941+05:30
+2024-08-29T15:45:08: %EASYPY-INFO:     Stop time    : 2024-08-29 15:45:07.775288+05:30
+2024-08-29T15:45:08: %EASYPY-INFO:     Elapsed time : 0:00:01
+2024-08-29T15:45:08: %EASYPY-INFO:     Archive      : /home/tcs/.pyats/archive/24-08/job.2024Aug29_15:45:00.525302.zip
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Total Tasks    : 1
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Overall Stats
+2024-08-29T15:45:08: %EASYPY-INFO:     Passed     : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Passx      : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Failed     : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Aborted    : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Blocked    : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Skipped    : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Errored    : 1
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO:     TOTAL      : 1
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Success Rate   : 0.00 %
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Section Stats
+2024-08-29T15:45:08: %EASYPY-INFO:     Passed     : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Passx      : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Failed     : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Aborted    : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Blocked    : 1
+2024-08-29T15:45:08: %EASYPY-INFO:     Skipped    : 0
+2024-08-29T15:45:08: %EASYPY-INFO:     Errored    : 2
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO:     TOTAL      : 3
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: Section Success Rate   : 0.00 %
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: |                             Task Result Summary                              |
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: Task-1: test.VLANTestCase                                                ERRORED
+2024-08-29T15:45:08: %EASYPY-INFO:
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: |                             Task Result Details                              |
+2024-08-29T15:45:08: %EASYPY-INFO: +------------------------------------------------------------------------------+
+2024-08-29T15:45:08: %EASYPY-INFO: Task-1: test
+2024-08-29T15:45:08: %EASYPY-INFO: `-- VLANTestCase                                                         ERRORED
+2024-08-29T15:45:08: %EASYPY-INFO:     |-- setup                                                            ERRORED
+2024-08-29T15:45:08: %EASYPY-INFO:     |-- verify                                                           BLOCKED
+2024-08-29T15:45:08: %EASYPY-INFO:     `-- cleanup                                                          ERRORED
+2024-08-29T15:45:08: %EASYPY-INFO: Sending report email...
+2024-08-29T15:45:08: %EASYPY-INFO: Missing SMTP server configuration, or failed to reach/authenticate/send mail. Result notification email failed to send.
+2024-08-29T15:45:08: %EASYPY-INFO: Done!
